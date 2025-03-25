@@ -20,9 +20,52 @@ public class SellerDaoJDBC implements SellerDao {
         this.conn = conn;
     }
 
+    /**
+     * Insere um novo vendedor (Seller) no banco de dados e recupera o ID gerado automaticamente.
+     *
+     * @param obj Objeto Seller a ser inserido no banco de dados.
+     * @throws DbException Se ocorrer um erro durante a inserção.
+     */
     @Override
     public void insert(Seller obj) {
 
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try {
+            st = conn.prepareStatement("INSERT INTO seller\n" +
+                            "(Name, Email, BirthDate, BaseSalary, DepartmentId)\n" +
+                            "VALUES\n" +
+                            "(?, ?, ?, ?, ?)",
+                    Statement.RETURN_GENERATED_KEYS); // Habilita a recuperação do ID gerado
+
+            st.setString(1, obj.getName());
+            st.setString(2, obj.getEmail());
+            st.setDate(3, new java.sql.Date(obj.getBirthDate().getTime()));
+            st.setDouble(4, obj.getBaseSalary());
+            st.setInt(5, obj.getDepartment().getId());
+
+
+            int rows = st.executeUpdate();
+
+            if (rows > 0) {
+                rs = st.getGeneratedKeys();
+
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    obj.setId(id);
+                    DB.closeStatment(st);
+                }
+
+            } else {
+                throw new DbException("Nenhuma linha afetada!");
+            }
+        } catch (Exception e) {
+            throw new DbException(e.getMessage());
+        } finally {
+
+            DB.closeResulSet(rs);
+        }
     }
 
     @Override
@@ -121,6 +164,15 @@ public class SellerDaoJDBC implements SellerDao {
 
     }
 
+    /**
+     * Métod0 responsável por instanciar um objeto Seller a partir do resultado de uma consulta SQL.
+     *
+     * @param rs  ResultSet contendo os dados da consulta ao banco de dados.
+     * @param department Objeto Department já instanciado, relacionado ao vendedor.
+     * @return Um objeto Seller preenchido com os dados do banco de dados.
+     * @throws SQLException    Caso ocorra um erro ao acessar os dados do ResultSet.
+     * @throws ParseException  Caso ocorra um erro ao converter a data de nascimento.
+     */
     private Seller instantionSeller(ResultSet rs, Department department) throws SQLException, ParseException {
         Seller seller = new Seller();
 
@@ -181,7 +233,7 @@ public class SellerDaoJDBC implements SellerDao {
 
             return list;
 
-       } catch (SQLException e) {
+        } catch (SQLException e) {
             throw new DbException(e.getMessage());
         } catch (ParseException e) {
             throw new RuntimeException(e);
