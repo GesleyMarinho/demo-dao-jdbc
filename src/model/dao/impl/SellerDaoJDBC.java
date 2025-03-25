@@ -129,14 +129,14 @@ public class SellerDaoJDBC implements SellerDao {
         seller.setEmail(rs.getString("Email"));
         seller.setBaseSalary(rs.getDouble("BaseSalary"));
 
-        /* Convertendo a data para um texto, logo no SQLite não aceita o formato de data diretamente e precisa fazer a conversão*/
-        String birthDateStr = rs.getString("BirthDate"); // Pegando a data como String
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        /* Pegando a data como String */
+        String birthDateStr = rs.getString("BirthDate");
 
+        /* Ajustando o formato para corresponder à String do banco */
+        SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
         Date birthDate = format.parse(birthDateStr);
-
+        System.out.println("Data retornada do banco: " + birthDate);
         seller.setBirthDate(birthDate);
-
 
         seller.setDepartment(department);
         return seller;
@@ -153,6 +153,42 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public List<Seller> findAll() {
-        return List.of();
+
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try {
+            st = conn.prepareStatement("SELECT seller.*,department.Name as DepName\n" +
+                    "FROM seller INNER JOIN department\n" +
+                    "ON seller.DepartmentId = department.Id\n" +
+                    "ORDER BY Name");
+
+            rs = st.executeQuery();
+            List<Seller> list = new ArrayList<>();
+            Map<Integer, Department> map = new HashMap<>();
+
+            while (rs.next()) {
+                Department department = map.get(rs.getInt("DepartmentId"));
+                if (department == null) {
+                    department = instantionDepartment(rs);
+                    map.put(rs.getInt("DepartmentId"), department);
+                }
+
+                Seller obj = instantionSeller(rs, department);
+                list.add(obj);
+
+            }
+
+            return list;
+
+       } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        } finally {
+            DB.closeResulSet(rs);
+            DB.closeStatment(st);
+        }
+
     }
 }
