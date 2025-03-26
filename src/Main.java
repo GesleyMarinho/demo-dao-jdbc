@@ -32,10 +32,15 @@ public class Main {
             System.out.println(obj);
         }*/
 
-        System.out.println("Teste Insert");
+        /*System.out.println("Teste Insert");
 
         Seller newSeller = new Seller(0,"greg", "greg@greg.com", new Date(), 4000.0, department);
         sellerDao.insert(newSeller);
         System.out.println("insert, new ID = " + newSeller.getId());
+        System.out.println("Teste Update");
+        sellerDao.update(new Seller(30,"teste","teste@teste.com",new Date(), 3500.0,department));*/
+
+        System.out.println("Teste Delete");
+        sellerDao.deleteById(1);
     }
 }

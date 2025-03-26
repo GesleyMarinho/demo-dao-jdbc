@@ -71,11 +71,65 @@ public class SellerDaoJDBC implements SellerDao {
     @Override
     public void update(Seller obj) {
 
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try {
+            st = conn.prepareStatement("UPDATE seller\n" +
+                            " SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ?\n" +
+                            " WHERE Id = ?",
+                    Statement.RETURN_GENERATED_KEYS
+            );
+
+            st.setString(1, obj.getName());
+            st.setString(2, obj.getEmail());
+            /*Convertendo a data para Texto*/
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String birthDateStr = sdf.format(obj.getBirthDate());
+
+            st.setString(3, birthDateStr);
+            st.setDouble(4, obj.getBaseSalary());
+            st.setInt(5, obj.getDepartment().getId());
+            st.setInt(6, obj.getId());
+
+            int rows = st.executeUpdate();
+            if (rows == 0) {
+                throw new DbException("Erro nenhuma linha foi atualizada. verifique o ID");
+            } else {
+                System.out.println("Update realizado com sucesso! ID atualizado " + obj.getId());
+            }
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        } finally {
+            DB.closeResulSet(rs);
+            DB.closeStatment(st);
+        }
+
     }
 
     @Override
     public void deleteById(int id) {
 
+        PreparedStatement st = null;
+
+
+        try {
+            st = conn.prepareStatement("DELETE FROM seller\n" +
+                    "WHERE Id = ?");
+            st.setInt(1, id);
+            int rows = st.executeUpdate();
+            if (rows == 0) {
+                throw new DbException("Usuário não encontrado, Delete não foi aplicado! " + id);
+            } else {
+                System.out.println("Usuário Deletado com Sucesso " + id);
+            }
+
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        } finally {
+
+            DB.closeStatment(st);
+        }
     }
 
     @Override
@@ -167,12 +221,12 @@ public class SellerDaoJDBC implements SellerDao {
     /**
      * Métod0 responsável por instanciar um objeto Seller a partir do resultado de uma consulta SQL.
      *
-     * @param rs  ResultSet contendo os dados da consulta ao banco de dados.
+     * @param rs         ResultSet contendo os dados da consulta ao banco de dados.
      * @param department Objeto Department já instanciado, relacionado ao vendedor.
      * @return Um objeto Seller preenchido com os dados do banco de dados.
-     * @throws SQLException    Caso ocorra um erro ao acessar os dados do ResultSet.
-     * @throws ParseException  Caso ocorra um erro ao converter a data de nascimento.
-     */
+     * @throws SQLException   Caso ocorra um erro ao acessar os dados do ResultSet.
+     * @throws ParseException Caso ocorra um erro ao converter a data de nascimento.
+     **/
     private Seller instantionSeller(ResultSet rs, Department department) throws SQLException, ParseException {
         Seller seller = new Seller();
 
